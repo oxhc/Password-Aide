@@ -1,0 +1,14 @@
+*.spec
+*.dat
+*.xlsx
+*.xls
+dist
+build
+venv
+.idea
+ui/.idea
+__pycache__
+bank.py
+/failed_import.txt
+/.vscode/settings.json
+*.db
