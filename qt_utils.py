@@ -45,9 +45,9 @@ class ThreadProxy(QThread):
         self.signal = signal
 
     def run(self):
-        if self.func is not None:
-            if self.args is not None:
-                res = self.func(self.args)
+        if self.func:
+            if self.args:
+                res = self.func(*self.args)
             else:
                 res = self.func()
             print(res)
