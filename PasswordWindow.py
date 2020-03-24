@@ -1,5 +1,4 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, Qt, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox, QTableWidgetItem
 
 import controller
@@ -13,8 +12,8 @@ class PasswordWindow(QMainWindow):
         self.ui = Ui_Students()
         self.ui.setupUi(self)
         self.c = PwSignals()
-        self.setAttribute(QtCore.Qt.WA_QuitOnClose, False)
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_QuitOnClose, False)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.thread = None
         self.bind()
         self.ui.info_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -32,7 +31,7 @@ class PasswordWindow(QMainWindow):
         self.search()
 
     def bind(self):
-        self.c.stu_signal.connect(self.fresh_table)
+        self.c.passwords.connect(self.fresh_table)
         self.ui.search_button.clicked.connect(self.search)
 
         self.c.flag_signal.connect(lambda x: self.msg_fresh(x, 'add'))
@@ -100,7 +99,7 @@ class PasswordWindow(QMainWindow):
         except Exception:
             page = 1
         keyword = None if keyword == '' else keyword
-        self.thread = ThreadProxy(func=lambda: controller.get(keyword, page=page), signal=self.c.stu_signal)
+        self.thread = ThreadProxy(func=lambda: controller.get(keyword, page=page), signal=self.c.passwords)
         self.thread.start()
 
     @comfirm('修改')
@@ -140,13 +139,8 @@ class PasswordWindow(QMainWindow):
 
 
 class PwSignals(QObject):
-    stu_str_signal = QtCore.pyqtSignal(list)
-    stu_signal = QtCore.pyqtSignal(list)
-    flag_signal = QtCore.pyqtSignal(bool)
-    del_signal = QtCore.pyqtSignal(bool)
-    added_signal = QtCore.pyqtSignal(tuple)
-    repair_list_signal = QtCore.pyqtSignal(list)
-    fresh_signal = QtCore.pyqtSignal()
-    op_signal = QtCore.pyqtSignal(bool)
-    check_signal = QtCore.pyqtSignal(bool, str)
-    receive_keyword = QtCore.pyqtSignal(str)
+    passwords = pyqtSignal(list)
+    flag_signal = pyqtSignal(bool)
+    del_signal = pyqtSignal(bool)
+    op_signal = pyqtSignal(bool)
+    receive_keyword = pyqtSignal(str)

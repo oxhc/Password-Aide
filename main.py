@@ -1,8 +1,7 @@
 import sys
 
 import pyperclip
-from PyQt5 import QtCore
-from PyQt5.QtCore import QObject, Qt
+from PyQt5.QtCore import QObject, Qt, pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QDialog
 
 import controller
@@ -18,14 +17,14 @@ class LoginWindow(QDialog):
         super().__init__()
         self.ui = Ui_Login()
         self.ui.setupUi(self)
-        self.setWindowFlags(QtCore.Qt.WindowCloseButtonHint)
+        self.setWindowFlags(Qt.WindowCloseButtonHint)
         self.main_window = None
         self.bind()
 
     def check_login(self):
         user_name = self.ui.user_name.text()
         password = self.ui.password.text()
-        if True:
+        if password:
             self.hide()
             if self.main_window is None:
                 self.main_window = MainWindow()
@@ -35,7 +34,7 @@ class LoginWindow(QDialog):
             QMessageBox.information(self,
                                     "错误",
                                     "用户名或密码错误",
-                                    QMessageBox.Yes)
+                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         return
 
     def guest_login(self):
@@ -57,17 +56,16 @@ class AboutWindow(QDialog, Ui_About):
 
 
 class MwSignals(QObject):
-    open_PasswordWindow = QtCore.pyqtSignal(bool)
-    generate = QtCore.pyqtSignal(str)
-    usernames = QtCore.pyqtSignal(list)
-    insert_res = QtCore.pyqtSignal(bool)
+    open_PasswordWindow = pyqtSignal(bool)
+    generate = pyqtSignal(str)
+    usernames = pyqtSignal(list)
+    insert_res = pyqtSignal(bool)
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        # noinspection PyArgumentList
         super().__init__()
-        self.student_window = None
-        self.thread = None
         self.c = MwSignals()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -79,12 +77,13 @@ class MainWindow(QMainWindow):
 
         self.top = False
         self.flags = self.windowFlags()
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         self.thread = ThreadProxy(func=controller.get_default_username, signal=self.c.usernames)
         self.thread.start()
 
-    def insert(self):
+    @pyqtSlot()
+    def on_insert_clicked(self):
         combo = self.ui.username_combo.currentText()
         if combo == 'other':
             combo = self.ui.g_username.text()
@@ -104,20 +103,17 @@ class MainWindow(QMainWindow):
         if self.password_window:
             if search:
                 self.password_window.c.receive_keyword.emit(self.ui.keyword.text())
-            self.password_window.show()
         else:
             self.password_window = PasswordWindow()
             print(self.ui.keyword.text())
             if search:
                 self.password_window.c.receive_keyword.emit(self.ui.keyword.text())
             self.password_window.ui.search_button.clicked.emit(True)
-            self.password_window.show()
+        self.password_window.show()
 
     def bind(self):
         self.ui.open_pw.clicked.connect(self.openPasswordWindow)
-        self.ui.about_menu.triggered.connect(self.openAboutWindow)
-        self.ui.generate.clicked.connect(self.generate)
-        self.c.generate.connect(self.generate_display)
+        self.c.generate.connect(self.ui.p_ged.setText)
         self.ui.copy_pass.clicked.connect(lambda: pyperclip.copy(self.ui.p_ged.text()))
 
         def func(widget):
@@ -129,15 +125,14 @@ class MainWindow(QMainWindow):
         self.ui.copy_user.clicked.connect(lambda: pyperclip.copy(func(self)))
         self.ui.copy_name.clicked.connect(lambda: self.ui.g_name.setText(pyperclip.paste()))
         self.c.usernames.connect(self.default_username)
-        self.ui.insert.clicked.connect(self.insert)
         self.c.insert_res.connect(lambda x: msg(self, x))
         self.ui.search_button.clicked.connect(lambda: self.openPasswordWindow(search=True))
         self.ui.keyword.returnPressed.connect(self.ui.search_button.clicked.emit)
-        self.ui.entop.clicked.connect(self.onTop)
 
-    def onTop(self):
+    @pyqtSlot()
+    def on_entop_clicked(self):
         if self.top:
-            self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+            self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.ui.entop.setText("Not\nTop")
             self.top = False
         else:
@@ -146,25 +141,18 @@ class MainWindow(QMainWindow):
             self.top = True
         self.show()
 
-    def generate(self):
-        self.ui.generate.setEnabled(False)
+    @pyqtSlot()
+    def on_generate_clicked(self):
         self.thread = ThreadProxy(func=lambda: controller.gen(10), signal=self.c.generate)
         self.thread.start()
 
-    def generate_display(self, passwd):
-        self.ui.p_ged.setText(passwd)
-        self.ui.generate.setEnabled(True)
-
-    def openAboutWindow(self):
+    @pyqtSlot()
+    def on_about_menu_triggered(self):
         if self.about_window is not None:
             self.about_window.show()
             return
         self.about_window = AboutWindow()
         self.about_window.show()
-
-    def logout(self):
-        self.c.fresh_signal.emit()
-        self.parent_window.show()
 
 
 if __name__ == '__main__':
