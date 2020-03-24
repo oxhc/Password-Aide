@@ -1,10 +1,10 @@
 <RCC>
-    <qresource prefix="imgs">
-        <file>login_av.png</file>
-        <file>search_stu.png</file>
-        <file>fresh.png</file>
-        <file>logo_icon.png</file>
-        <file>about.png</file>
-        <file>student_login_logo.png</file>
-    </qresource>
+  <qresource prefix="imgs">
+    <file>rime.jpg</file>
+    <file>login_av.png</file>
+    <file>search_stu.png</file>
+    <file>logo_icon.png</file>
+    <file>about.png</file>
+  </qresource>
+  <qresource prefix="newPrefix"/>
 </RCC>
